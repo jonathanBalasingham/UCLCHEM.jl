@@ -1,5 +1,5 @@
 module UCLCHEM
-
-# Write your package code here.
-
-end
+include("NNSolve.jl")
+include("Formulate.jl")
+include("Visualize.jl")
+end # module
