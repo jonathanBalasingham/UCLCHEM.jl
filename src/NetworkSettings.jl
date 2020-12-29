@@ -1,4 +1,3 @@
-include("Rates.jl")
 
 struct NetworkSettings
     speciesFilepath::String

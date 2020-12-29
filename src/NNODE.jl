@@ -1,6 +1,6 @@
 using CUDA
 using Flux, Zygote, DiffEqSensitivity, ForwardDiff, Random, Distributions
-using DiffEqFlux, Adapt, DiffEqNoiseProcess, StochasticDiffEq
+using DiffEqFlux, Adapt
 using ModelingToolkit
 using GalacticOptim
 using Quadrature
