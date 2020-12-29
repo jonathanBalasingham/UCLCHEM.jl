@@ -12,9 +12,10 @@ function formulate(speciesFilepath::String, reactionsFilepath::String, icFilepat
 
     calculateRates!(reactionsData, p)
     filterReactionData!(reactionsData, speciesData.name)
+
     inc = InitialNetworkConditions(icFilepath)
     fillInitialNetworkConditions(inc, speciesData.name)
+    
     u0, network = createNetwork(inc, speciesData.name, reactionsData, p)
-    println(typeof(u0))
-    ODEProblem{false}(network, u0, tspan)
+    ChemicalNetworkProblem(network, speciesData.name, u0, tspan)
 end

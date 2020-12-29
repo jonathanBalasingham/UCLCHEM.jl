@@ -1,6 +1,7 @@
 include("Reaction.jl")
 using ModelingToolkit
-# what is D??
+
+
 function prod(ind, species, reactions, Y)
     name = species[ind]
     # find reactions that have name in prod 1,2,3 or 4
@@ -85,3 +86,18 @@ function createNetwork(IC::InitialNetworkConditions, species::Array{String}, rea
     eqs = eqs .|> simplify
     u0, ODESystem(eqs, name=:uclchem)
 end
+
+struct ChemicalNetworkProblem
+    network::ODESystem
+    species::Array{String,1}
+    u0::Array{Float64,1}
+    tspan::Tuple{Float64, Float64}
+end
+
+struct ChemicalNetworkSolution
+    t
+    u::Array{Array{Float64,1},1}
+    species::Array{String,1}
+end
+
+species(network::ChemicalNetworkProblem) = network.species
