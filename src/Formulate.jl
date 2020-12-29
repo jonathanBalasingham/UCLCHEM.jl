@@ -3,7 +3,6 @@ using DataFrames
 
 include("InitialNetworkConditions.jl")
 include("ChemicalNetwork.jl")
-include("Reaction.jl")
 
 
 function formulate(speciesFilepath::String, reactionsFilepath::String, icFilepath::String, p::Parameters, tspan::Tuple{Float64,Float64})

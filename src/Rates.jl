@@ -1,9 +1,9 @@
 
-R_AB(alpha, beta, gamma, T) = alpha*(T/(300))^beta*exp(-gamma/T)
-R_CRProton(alpha, zeta) = alpha*zeta
-R_CRPhoton(alpha, beta, zeta, omega, T, E) = alpha*(T/(300)^beta *((E*zeta)/(1-omega)))
-# changed because k is constant; k -> gamma
-R_UV(alpha, F_UV, gamma, A_v) = alpha*F_UV*exp(-gamma*A_v)
+R_AB(alpha::Float64, beta::Float64, gamma::Float64, T::Float64) = alpha*(T/(300))^beta*exp(-gamma/T)
+R_CRProton(alpha::Float64, zeta::Float64) = alpha*zeta
+R_CRPhoton(alpha::Float64, beta::Float64, zeta::Float64, omega::Float64, T::Float64, E::Float64) =
+     alpha*(T/(300)^beta *((E*zeta)/(1-omega)))
+R_UV(alpha::Float64, F_UV::Float64, gamma::Float64, A_v::Float64) = alpha*F_UV*exp(-gamma*A_v)
 
 struct Parameters
     zeta::Float64
@@ -27,7 +27,7 @@ function calculateRates!(rdata, parameters)
         elseif row.re2 == "PHOTON"
             row.rate = R_UV(row.alpha, parameters.F_UV, row.gamma, parameters.A_v)
         else
-            row.rate = R_AB(row.alpha,row.beta,row.gamma,parameters.T) * p.density
+            row.rate = R_AB(row.alpha,row.beta,row.gamma,parameters.T) * parameters.density
         end
     end
 end
