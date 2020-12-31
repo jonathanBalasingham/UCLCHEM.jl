@@ -49,17 +49,6 @@ function loss(ind, species, reactions, Y)
     p
 end
 
-function getHydrogenIndex(slist)
-    i = 1
-    for sp in slist
-        if sp == "H"
-            return i 
-        else
-            i += 1
-        end
-    end
-    println("Couldn't find H, not adding H2 formation")
-end
 
 function createNetwork(IC::InitialNetworkConditions, species::Array{String}, reactionsData::DataFrame, p::Parameters)
     ModelingToolkit.@parameters t
@@ -67,7 +56,7 @@ function createNetwork(IC::InitialNetworkConditions, species::Array{String}, rea
     @derivatives D'~t
 
     nH = 1. # CHANGE ME
-    H_index = getHydrogenIndex(species)
+    H_index = findfirst(x->x=="H", species)
     h2_rate = 10^-17*sqrt(p.T)*y[H_index]
     ydot = D.(y)
     eqs = []
