@@ -17,9 +17,14 @@ struct NNODE{C,O,P,K} <: NeuralPDEAlgorithm
     autodiff::Bool
     kwargs::K
 end
+
 function NNODE(chain,opt=Optim.BFGS(),init_params = nothing;autodiff=false,kwargs...)
     if init_params === nothing
-        initθ,re  = Flux.destructure(chain)
+        if chain isa FastChain
+            initθ = DiffEqFlux.initial_params(chain)
+        else
+            initθ,re  = Flux.destructure(chain)
+        end
     else
         initθ = init_params
     end

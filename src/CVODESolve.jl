@@ -1,7 +1,7 @@
 using Sundials
 using DifferentialEquations
 
-function solve(prob::ChemicalNetworkProblem; tol::Float64=1e-10, maxiter::Int=10000, dt::Number = 50)
+function solve(prob::ChemicalNetworkProblem; abstol::Float64=10^-20, reltol=10^-4, maxiter::Int=10000, dt::Number = 100, solver=CVODE_Adams)
     current_time = 0.0
     target_time = 1.1
     u = Float64[]
@@ -11,7 +11,7 @@ function solve(prob::ChemicalNetworkProblem; tol::Float64=1e-10, maxiter::Int=10
     while current_time <= prob.tspan[2]
         print(current_time)
         print(" ")
-        sol = DifferentialEquations.solve(current_problem, CVODE_Adams(), maxiter=maxiter, saveat=(target_time - current_time)/dt)
+        sol = DifferentialEquations.solve(current_problem, solver(), maxiter=maxiter, saveat=(target_time - current_time)/dt, reltol=reltol, abstol=abstol)
         u = vcat(u, sol.u[2:end])
         t = vcat(t, sol.t[2:end])
         current_time = target_time

@@ -14,7 +14,7 @@ end
 function fillInitialNetworkConditions(inc::InitialNetworkConditions, speciesList)
     for species in speciesList
         if !(species in keys(inc.initialConcentrations))
-            inc.initialConcentrations[species] = 0.
+            inc.initialConcentrations[species] = 10^-20
         end
     end
 end

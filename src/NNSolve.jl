@@ -3,9 +3,13 @@ using NeuralPDE
 using DifferentialEquations
 using Flux
 
-function nnsolve(prob::ChemicalNetworkProblem; chain=DiffEqFlux.FastChain(DiffEqFlux.FastDense(1, 5, σ), DiffEqFlux.FastDense(5, 1)), tol::Float64=1e-10, maxiters::Int=10000, dt::Number = 50 )
+include("NNODE.jl")
+
+function nnsolve(prob::ChemicalNetworkProblem; 
+                 chain=DiffEqFlux.FastChain(DiffEqFlux.FastDense(1, 5, σ), DiffEqFlux.FastDense(5, 1)), 
+                 opt = Flux.ADAM(0.01, (0.9, 0.95)), 
+                 tol::Float64=10^-20, maxiters::Int=20000, dt::Number = 20, dt_factor=1.4)
  
-    opt = Flux.ADAM(0.1, (0.9, 0.95))
     current_time = 0.0
     target_time = 1.1
     u = Float64[]
@@ -21,8 +25,11 @@ function nnsolve(prob::ChemicalNetworkProblem; chain=DiffEqFlux.FastChain(DiffEq
         u = vcat(u, sol.u[2:end])
         t = vcat(t, sol.t[2:end])
         current_time = target_time
-        if current_time > year_1000 target_time *= 1.1 else target_time *= 10. end
+        if current_time > year_1000 target_time *= 1.3 else target_time *= 10. end
         current_problem = ODEProblem{false}(prob.network, sol.u[end], (current_time, target_time))
+        dt *= dt_factor
+        print(dt)
+        print(" ; ")
     end
     ChemicalNetworkSolution(t,u, prob.species)
 end
