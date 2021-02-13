@@ -6,7 +6,8 @@ isnan(s::String) = s == "NaN" || s == "NAN"
 isspecies(s::String) = !(s in ["PHOTON", "CRP", "CRPHOT"])
 
 function reactionCriteria(reaction, species)
-    reAndProd = filter(!isnan, Array(reaction[1:7]))
+    reAndProd = filter(!ismissing, Array(reaction[1:7]))
+    reAndProd = filter(!isnan, reAndProd)
     reAndProd = filter(isspecies, reAndProd)
     for i in reAndProd
         if !(i in species)
