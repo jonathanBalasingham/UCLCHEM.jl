@@ -20,29 +20,29 @@ dens = 1e4
 p = UCLCHEM.Parameters(zeta, omega, T, F_UV, A_v, E, dens)
 
 #tspan = (0., 10^7 * 365. * 24. * 3600.)
-tspan = (0., 10^2 * 365. * 24. * 3600.)
+tspan = (0., 10^0 * 365. * 24. * 3600.)
 
-nw_prob = UCLCHEM.formulate(sfp,rfp,icfp,p,tspan, rate_factor=1000)
+nw_prob = UCLCHEM.formulate(sfp,rfp,icfp,p,tspan)
 prob = ODEProblem(nw_prob.network, nw_prob.u0, tspan)
-sol = solve(prob, CVODE_BDF(), saveat = 24*360000*365)
-sol2 = UCLCHEM.solve(nw_prob, dt=10000)
+sol = solve(prob, CVODE_Adams())
+#sol2 = UCLCHEM.solve(nw_prob, dt=10000)
 println("Problem solved with CVODE")
 
-v = sol2.u
+v = sol.u
 data = Matrix(hcat(v...))
 shift = 1
-train_len = 400000
-predict_len = 1000
+train_len = 60000
+predict_len = 10000
 train = data[:, shift:shift+train_len-1]
 test = data[:, shift+train_len:shift+train_len+predict_len-1]
 
-approx_res_size = 500
-radius = 2.8
-degree = 200
+approx_res_size = 300
+radius = 2.1
+degree = 5
 activation = tanh
 sigma = 0.7
 beta = 0.0
-alpha = 0.05 # leaking factor
+alpha = 0.98 # leaking factor
 nla_type = NLADefault()
 extended_states = false
 
