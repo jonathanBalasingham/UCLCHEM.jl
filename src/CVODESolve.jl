@@ -18,11 +18,11 @@ function solve(prob::ChemicalNetworkProblem;
     while current_time <= prob.tspan[2]
         print(current_time)
         print(" ")
-        sol = DifferentialEquations.solve(current_problem, solver(), maxiter=maxiter, saveat=(target_time - current_time)/dt, reltol=reltol, abstol=abstol)
+        sol = DifferentialEquations.solve(current_problem, solver(), maxiter=maxiter, reltol=reltol, abstol=abstol)
         u = vcat(u, sol.u[2:end])
         t = vcat(t, sol.t[2:end])
         current_time = target_time
-        if current_time > year_1000 target_time *= time_factor else target_time *= 10. end
+        if current_time > year_1000 target_time *= time_factor else target_time *= time_factor_pre_1000_years end
         #current_problem = ODEProblem{true}(prob.network, sol.u[end], (current_time, target_time))
         current_problem = remake(current_problem, tspan=(current_time, target_time), u0=sol.u[end])
     end
