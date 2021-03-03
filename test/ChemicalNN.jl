@@ -18,7 +18,7 @@ dens = 1e4
 p = UCLCHEM.Parameters(zeta, omega, T, F_UV, A_v, E, dens)
 
 #tspan = (0., 10^7 * 365. * 24. * 3600.)
-tspan = (0., 10^2 * 365. * 24. * 3600.)
+tspan = (0., 10^4 * 365. * 24. * 3600.)
 
 nw_prob = UCLCHEM.formulate(sfp,rfp,icfp,p,tspan)
 prob = ODEProblem(nw_prob.network, nw_prob.u0, tspan)
