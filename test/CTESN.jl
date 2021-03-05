@@ -104,11 +104,11 @@ function main()
     test = data[:, (shift+train_len):(shift+train_len+predict_len-1)]
 
     for rs in res_sizes
-        for r in radii
+        for a in alphas
             for d in degrees
                 for s in sigmas
                     for b in betas
-                        for a in alphas
+                        for r in radii
                             create_and_test_esn(rs,r,d,tanh,s,b,a,NLADefault(),false, train, test, predict_len)
                         end
                     end
