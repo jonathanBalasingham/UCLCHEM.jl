@@ -8,6 +8,7 @@ using ParameterizedFunctions
 using Plots
 using SQLite
 
+
 function create_and_test_esn(res_size,
                             radius,
                             degree,
@@ -63,7 +64,7 @@ end
 
 
 function main()
-    res_sizes = [2999]
+    res_sizes = [1001]
     radii = collect(.1:.1:10)
     degrees = [10, 50, 100]
     sigmas = collect(2.0:.2:20.0)
@@ -85,9 +86,9 @@ function main()
     p = UCLCHEM.Parameters(zeta, omega, T, F_UV, A_v, E, dens)
 
     #tspan = (0., 10^7 * 365. * 24. * 3600.)
-    tspan = (0., 10^6 * 365. * 24. * 3600.)
+    tspan = (0., 10^5 * 365. * 24. * 3600.)
 
-    nw_prob = UCLCHEM.formulate(sfp,rfp,icfp,p,tspan, rate_factor=10000)
+    nw_prob = UCLCHEM.formulate(sfp,rfp,icfp,p,tspan, rate_factor=100000)
     #prob = ODEProblem(nw_prob.network, nw_prob.u0, tspan)
     #sol = solve(prob, CVODE_BDF(), saveat = 24*360000*365)
     sol2 = UCLCHEM.solve(nw_prob, time_factor_pre_1000_years=20)
@@ -95,9 +96,9 @@ function main()
 
     v = sol2.u
     data = Matrix(hcat(v...))
-    shift = 100000
-    train_len = 3000000
-    predict_len = 200000
+    shift = 10000
+    train_len = 2000000
+    predict_len = 30000
     every_nth = 2000
 
     train = data[:, shift:every_nth:shift+train_len-1]
@@ -107,7 +108,7 @@ function main()
         for a in alphas
             for d in degrees
                 for s in sigmas
-                    for b in betas
+                    Threads.@threads for b in betas
                         for r in radii
                             create_and_test_esn(rs,r,d,tanh,s,b,a,NLADefault(),false, train, test, predict_len)
                         end
