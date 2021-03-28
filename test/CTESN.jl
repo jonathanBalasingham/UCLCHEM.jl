@@ -7,6 +7,33 @@ using ReservoirComputing
 using ParameterizedFunctions
 using Plots
 using SQLite
+using DelimitedFiles
+
+
+function read_in_train_data(filepath::AbstractString, read_every::Int, include_time=false)
+    data = Vector{Vector{Float64}}(undef, 0)
+    file = open(filepath)
+    counter = 0
+    for i in eachline(file)
+        if (counter % read_every == 0)
+            b = IOBuffer(i)
+            chunk = readdlm(b, ',', Float64)
+            if length(data) == 0
+                data = chunk
+            else
+                data = vcat(data, chunk)
+            end
+        end
+        counter += 1
+    end
+    close(file)
+    println(counter)
+    if include_time
+        data[:, 2:end]'
+    else
+        data'
+    end
+end
 
 
 function create_and_test_esn(res_size,
@@ -20,7 +47,8 @@ function create_and_test_esn(res_size,
                             extended_states,
                             train,
                             test,
-                            predict_len)
+                            predict_len;
+                            make_plot=false)
 
     esn = ESN(  res_size,
                 train,
@@ -37,6 +65,10 @@ function create_and_test_esn(res_size,
     @time output = ESNpredict(esn, predict_len, W_out)
      
     test_error = sum(abs.(output - test))
+
+    if test_error > 100
+        return
+    end
 
     db = SQLite.DB("./test/ctesn_params.sqlite")
 
@@ -55,21 +87,24 @@ function create_and_test_esn(res_size,
     DBInterface.execute(db, query) 
     DBInterface.close!(db)
     #print(test_error)
-    #p = plot(transpose(output[1:12,:]),layout=(4,3), label="predicted",size=(1200,800))
-    #plot!(transpose(test[1:12,:]),layout=(4,3), label="actual", size=(1200,800))
     file_name = "ESN_$res_size" * "_$radius" * "_$degree" * "_$sigma" * "_$beta" * "_$alpha" * "_.png"
+
+    if make_plot
+        p = plot(transpose(output[1:12,:]),layout=(4,3), label="predicted",size=(1200,800))
+        plot!(transpose(test[1:12,:]),layout=(4,3), label="actual", size=(1200,800))
+        savefig(p, "./test/CTESN_Plots/" * file_name)
+    end
     print(file_name)
-    #savefig(p, "./test/CTESN_Plots/" * file_name)
 end
 
 
 function main()
     res_sizes = [1001]
-    radii = collect(.1:.1:10)
-    degrees = [10, 50, 100]
+    radii = collect(1.1:.1:10)
+    degrees = [10, 50]
     sigmas = collect(2.0:.2:20.0)
     betas = collect(0.0:.2:1.0)
-    alphas = collect(.49:.1:.99)
+    alphas = collect(.99:-.1:.49)
 
 
     rfp = "./test/input/reactions_postNN.csv"
@@ -86,9 +121,9 @@ function main()
     p = UCLCHEM.Parameters(zeta, omega, T, F_UV, A_v, E, dens)
 
     #tspan = (0., 10^7 * 365. * 24. * 3600.)
-    tspan = (0., 10^5 * 365. * 24. * 3600.)
+    tspan = (0., 10^7 * 365. * 24. * 3600.)
 
-    nw_prob = UCLCHEM.formulate(sfp,rfp,icfp,p,tspan, rate_factor=100000)
+    nw_prob = UCLCHEM.formulate(sfp,rfp,icfp,p,tspan)
     #prob = ODEProblem(nw_prob.network, nw_prob.u0, tspan)
     #sol = solve(prob, CVODE_BDF(), saveat = 24*360000*365)
     sol2 = UCLCHEM.solve(nw_prob, time_factor_pre_1000_years=20)
@@ -96,8 +131,8 @@ function main()
 
     v = sol2.u
     data = Matrix(hcat(v...))
-    shift = 10000
-    train_len = 2000000
+    shift = 1
+    train_len = 100000
     predict_len = 30000
     every_nth = 2000
 
@@ -108,9 +143,9 @@ function main()
         for a in alphas
             for d in degrees
                 for s in sigmas
-                    Threads.@threads for b in betas
+                    for b in betas
                         for r in radii
-                            create_and_test_esn(rs,r,d,tanh,s,b,a,NLADefault(),false, train, test, predict_len)
+                            create_and_test_esn(rs,r,d,tanh,s,b,a,NLADefault(),false, train, test, predict_len; make_plot=true)
                         end
                     end
                 end
