@@ -29,9 +29,36 @@ function read_in_train_data(filepath::AbstractString, read_every::Int, include_t
     close(file)
     println(counter)
     if include_time
-        data[:, 2:end]'
+        Matrix(data[:, 2:end]')
     else
-        data'
+        Matrix(data')
+    end
+end
+
+function read_first_rows(filepath::AbstractString, read_first::Int, include_time=false)
+    data = Vector{Vector{Float64}}(undef, 0)
+    file = open(filepath)
+    counter = 0
+    for i in eachline(file)
+        if (counter <= read_first)
+            b = IOBuffer(i)
+            chunk = readdlm(b, ',', Float64)
+            if length(data) == 0
+                data = chunk
+            else
+                data = vcat(data, chunk)
+            end
+        else
+            break
+        end
+        counter += 1
+    end
+    close(file)
+    println(counter)
+    if include_time
+        Matrix(data[:, 2:end]')
+    else
+        Matrix(data')
     end
 end
 
@@ -107,8 +134,8 @@ function main()
     alphas = collect(.99:-.1:.49)
 
 
-    rfp = "./test/input/reactions_postNN.csv"
-    sfp = "./test/input/species_postNN.csv"
+    rfp = "./test/input/reactions.csv"
+    sfp = "./test/input/species.csv"
     icfp = "./test/input/initcond1.csv"
 
     T=10. 
@@ -155,4 +182,40 @@ function main()
 
 end
 
-@time main()
+#@time main()
+
+
+res_size = 3000
+radius = .7
+degree = 100
+activation = tanh
+alpha = .99
+sigma = 1.6
+nla_type = NLADefault()
+extended_states = true
+beta = 0.000001
+
+#train  = read_in_train_data("./test/data/solution1.csv")
+
+esn = ESN(res_size,
+          train,
+          degree,
+          radius,
+          activation = activation, #default = tanh
+          alpha = alpha, #default = 1.0
+          sigma = sigma, #default = 0.1
+          nla_type = nla_type, #default = NLADefault()
+          extended_states = extended_states #default = false
+    )
+
+
+@time W_out = ESNtrain(esn, beta)
+# reset the states
+esn.states[:, end] = esn.states[:, 1]
+
+@time output = ESNpredict(esn, size(train, 2), W_out)
+
+plot(transpose(output[1:12,:]),layout=(4,3), label="predicted",size=(1200,800))
+#plot!(transpose(test[1:12,:]),layout=(4,3), label="actual", size=(1200,800))
+
+plot(transpose(train[1:12,:]),layout=(4,3), label="actual", size=(1200,800))
