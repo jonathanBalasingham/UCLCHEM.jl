@@ -47,15 +47,26 @@ function solve(prob::ChemicalNetworkProblem,
     time_factor_pre_1000_years = 10.
     time_factor_post_1000_years = 1.1
     current_problem = ODEProblem(prob.network, prob.u0, (current_time, target_time))
+    year_in_secs = 3600 * 24 * 365
+
+    open(filepath, "a") do io
+        writedlm(io, Array([0.0; prob.u0]'), ',')
+    end
 
     while current_time <= prob.tspan[2]
         println(current_time)
-        sol = DifferentialEquations.solve(current_problem, solver(), maxiter=maxiter, reltol=reltol, abstol=abstol)
+        
 
-        data = Matrix(hcat(sol.u...))
+        if current_time > year_in_secs
+            sol = DifferentialEquations.solve(current_problem, solver(), maxiter=maxiter, reltol=reltol, abstol=abstol, saveat=year_in_secs, dt=1.)
+            data = Matrix(hcat(sol.u...))
 
-        open(filepath, "a") do io
-            writedlm(io, [sol.t data'], ',')
+            open(filepath, "a") do io
+                writedlm(io, [sol.t data'], ',')
+            end
+        else
+            sol = DifferentialEquations.solve(current_problem, solver(), maxiter=maxiter, reltol=reltol, abstol=abstol, dt=1.)
+            println(length(sol))
         end
 
         current_time = target_time
