@@ -28,7 +28,7 @@ function read_in_train_data(filepath::AbstractString, read_every::Int, include_t
     end
     close(file)
     println(counter)
-    if include_time
+    if !include_time
         Matrix(data[:, 2:end]')
     else
         Matrix(data')
@@ -55,7 +55,7 @@ function read_first_rows(filepath::AbstractString, read_first::Int, include_time
     end
     close(file)
     println(counter)
-    if include_time
+    if !include_time
         Matrix(data[:, 2:end]')
     else
         Matrix(data')
@@ -134,8 +134,8 @@ function main()
     alphas = collect(.99:-.1:.49)
 
 
-    rfp = "./test/input/reactions.csv"
-    sfp = "./test/input/species.csv"
+    rfp = "./test/input/reactions_postNN.csv"
+    sfp = "./test/input/species_postNN.csv"
     icfp = "./test/input/initcond1.csv"
 
     T=10. 
@@ -148,7 +148,7 @@ function main()
     p = UCLCHEM.Parameters(zeta, omega, T, F_UV, A_v, E, dens)
 
     #tspan = (0., 10^7 * 365. * 24. * 3600.)
-    tspan = (0., 10^7 * 365. * 24. * 3600.)
+    tspan = (0., 10^6 * 365. * 24. * 3600.)
 
     nw_prob = UCLCHEM.formulate(sfp,rfp,icfp,p,tspan)
     #prob = ODEProblem(nw_prob.network, nw_prob.u0, tspan)
@@ -192,30 +192,47 @@ activation = tanh
 alpha = .99
 sigma = 1.6
 nla_type = NLADefault()
-extended_states = true
+extended_states = false
 beta = 0.000001
 
-#train  = read_in_train_data("./test/data/solution1.csv")
+#train = read_in_train_data("./test/data/solution1.csv")
 
+train = log10.(read_in_train_data("./test/data/solution2.csv", 10000))
+test = log10.(read_in_train_data("./test/data/solution2.csv", 10005))
+starting_point = log10.(read_first_rows("./test/data/solution2.csv", 100))
+
+train = read_in_train_data("./test/data/solution2.csv", 10000)
+test = read_in_train_data("./test/data/solution2.csv", 10005)
+starting_point = read_first_rows("./test/data/solution2.csv", 100)
+
+train = log10.(read_in_train_data("./test/data/solution2.csv", 1000))
+test = log10.(read_in_train_data("./test/data/solution2.csv", 1005))
+starting_point = log10.(read_first_rows("./test/data/solution2.csv", 100))
+
+train = read_in_train_data("./test/data/solution3.csv", 1000)
+test = read_in_train_data("./test/data/solution3.csv", 1005)
+starting_point = read_first_rows("./test/data/solution3.csv", 100)
+
+train_subset = train[:, 1:200]
 esn = ESN(res_size,
-          train,
+          train_subset,
           degree,
           radius,
           activation = activation, #default = tanh
           alpha = alpha, #default = 1.0
           sigma = sigma, #default = 0.1
           nla_type = nla_type, #default = NLADefault()
-          extended_states = extended_states #default = false
-    )
+          extended_states = extended_states)
 
 
 @time W_out = ESNtrain(esn, beta)
 # reset the states
-esn.states[:, end] = esn.states[:, 1]
-
+esn.states[:, end] = esn.states[:, 2]
+fake_state = zeros(Float64, esn.res_size, 1)
+y = starting_point[:,2]
+esn.states[:,end] =  (1-alpha).*fake_state + alpha*activation.((esn.W*fake_state)+(esn.W_in*y))
 @time output = ESNpredict(esn, size(train, 2), W_out)
 
-plot(transpose(output[1:12,:]),layout=(4,3), label="predicted",size=(1200,800))
+scatter(transpose(output[1:20,:]),layout=(4,5), label="predicted",size=(1600,900))
 #plot!(transpose(test[1:12,:]),layout=(4,3), label="actual", size=(1200,800))
-
-plot(transpose(train[1:12,:]),layout=(4,3), label="actual", size=(1200,800))
+plot!(transpose(test[1:20,:]),layout=(4,5), label="actual", size=(1600,900))
