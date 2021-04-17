@@ -37,6 +37,7 @@ Zygote = "e88e6eb3-aa80-5325-afca-941959d7151f"
 deSolveDiffEq = "0518478a-701b-4815-806c-24ad5cb92f09"
 
 [compat]
+DiffEqBase = "6.59"
 DiffEqFlux = "1.31"
 julia = "1"
 
