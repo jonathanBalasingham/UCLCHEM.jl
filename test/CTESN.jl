@@ -185,11 +185,11 @@ end
 #@time main()
 
 
-res_size = 3000
+res_size = 3013
 radius = .7
 degree = 100
 activation = tanh
-alpha = .99
+alpha = .70
 sigma = 1.6
 nla_type = NLADefault()
 extended_states = false
@@ -197,23 +197,25 @@ beta = 0.000001
 
 #train = read_in_train_data("./test/data/solution1.csv")
 
-train = log10.(read_in_train_data("./test/data/solution2.csv", 10000))
-test = log10.(read_in_train_data("./test/data/solution2.csv", 10005))
-starting_point = log10.(read_first_rows("./test/data/solution2.csv", 100))
+#train = log10.(read_in_train_data("./test/data/solution2.csv", 100))
+#test = log10.(read_in_train_data("./test/data/solution2.csv", 105))
+#starting_point = log10.(read_first_rows("./test/data/solution2.csv", 100))
 
-train = read_in_train_data("./test/data/solution2.csv", 10000)
-test = read_in_train_data("./test/data/solution2.csv", 10005)
-starting_point = read_first_rows("./test/data/solution2.csv", 100)
+# USE THIS
+#train = read_in_train_data("./test/data/solution2.csv", 1000)
+#test = read_in_train_data("./test/data/solution2.csv", 1000)
+#starting_point = read_first_rows("./test/data/solution2.csv", 100)
 
-train = log10.(read_in_train_data("./test/data/solution2.csv", 1000))
-test = log10.(read_in_train_data("./test/data/solution2.csv", 1005))
-starting_point = log10.(read_first_rows("./test/data/solution2.csv", 100))
+#train = log10.(read_in_train_data("./test/data/solution2.csv", 1000))
+#test = log10.(read_in_train_data("./test/data/solution2.csv", 1005))
+#starting_point = log10.(read_first_rows("./test/data/solution2.csv", 100))
 
-train = read_in_train_data("./test/data/solution3.csv", 1000)
-test = read_in_train_data("./test/data/solution3.csv", 1005)
-starting_point = read_first_rows("./test/data/solution3.csv", 100)
+#train = read_in_train_data("./test/data/solution3.csv", 100)
+#test = read_in_train_data("./test/data/solution3.csv", 105)
+#starting_point = read_first_rows("./test/data/solution3.csv", 100)
 
-train_subset = train[:, 1:200]
+train_subset = train[:, 2:2:998]
+test_subset = train[:, 3:2:1000]
 esn = ESN(res_size,
           train_subset,
           degree,
@@ -229,10 +231,11 @@ esn = ESN(res_size,
 # reset the states
 esn.states[:, end] = esn.states[:, 2]
 fake_state = zeros(Float64, esn.res_size, 1)
-y = starting_point[:,2]
+y = starting_point[:,3]
 esn.states[:,end] =  (1-alpha).*fake_state + alpha*activation.((esn.W*fake_state)+(esn.W_in*y))
 @time output = ESNpredict(esn, size(train, 2), W_out)
 
 scatter(transpose(output[1:20,:]),layout=(4,5), label="predicted",size=(1600,900))
 #plot!(transpose(test[1:12,:]),layout=(4,3), label="actual", size=(1200,800))
-plot!(transpose(test[1:20,:]),layout=(4,5), label="actual", size=(1600,900))
+plot!(transpose(test_subset[1:20,2:end]),layout=(4,5), label="actual", size=(1600,900))
+xaxis!(:log10)
