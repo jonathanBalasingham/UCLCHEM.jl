@@ -25,8 +25,6 @@ end
 
 *(esr::EchoStateReservoir, input::AbstractArray) = esr.W * input
 
-@functor EchoStateReservoir
-
 
 mutable struct EchoStateNetwork
     input_layer::Dense
