@@ -47,4 +47,4 @@ evalcb() = @show(loss())
 @time Flux.train!(loss, parameters, data, opt, cb = Flux.throttle(evalcb, 1))
 
 using BSON: @save
-@save "first_network.bson" chain
+@save "roberson_network.bson" chain
