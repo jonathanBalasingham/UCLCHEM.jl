@@ -71,7 +71,7 @@ function H2SelfShielding(NH2,dopplerWidth,radWidth)
     taud  = FPARA * NH2 * 1.5e-2 * FOSC / dopplerWidth
      
     # calculate doppler contribution of self shielding function sj
-    if (taud .eq. 0.0) 
+    if (taud  ==   0.0) 
        sj = 1.0
     elseif (taud .lt. 2.0) 
        sj = exp(-0.6666667*taud)
@@ -85,7 +85,7 @@ function H2SelfShielding(NH2,dopplerWidth,radWidth)
 
     # calculate wing contribution of self shielding function sr
     # if (taud.lt.0.0) taud=0.0 end
-    if (radWidth .eq. 0.0)
+    if (radWidth  ==   0.0)
        sr = 0.0
     else
        r  = radWidth/(1.7724539*dopplerWidth)
@@ -250,5 +250,156 @@ function spline(x,y,n,yp1,ypn,y2)
     end
 end
 
+function splin2(x1a,x2a,ya,y2a,m,n,x1,x2,y)
+    # given x1a, x2a, ya, m, n as described in splie2 and y2a as
+    # produced by that routine; and given a desired interpolating
+    # point x1, x2; this routine returns an interpolated function
+    # value y by bicubic spline interpolation.
+    
+    # --------------------------------------------------------------
+    # i/o parameter and program variables type declaration
+    #double precision  x1a(m), x2a(n), ya(m,n), y2a(m,n), ytmp(nn),&
+    #&                      y2tmp(nn), yytmp(nn), x1, x2, y
+    # --------------------------------------------------------------
+    nn = 100
+    yytmp = zeros(nn)
+    y2tmp = zeros(nn)
+    #  perform m evaluations of the row splines constructed by splie2
+    # using the one-dimensional spline evaluator splint.
+    for j in 1:m
+        for k in 1:n
+            ytmp[k]  = ya[j,k]
+            y2tmp[k] = y2a[j,k]
+        end
+        splint(x2a,ytmp,y2tmp,n,x2,yytmp[j])
+    end
+    # construct the one-dimensional column spline and evaluate it.
+    spline(x1a, yytmp, m, 1.0e30, 1.0e30, y2tmp)
+    splint(x1a, yytmp, y2tmp, m, x1, y)
+end
+       
+function splint(xa::Array{T}, ya::Array{T}, y2a::Array{T}, n::Integer, x::T, y::T) where {T<:Float64}
+    # cubic spline interpolation
+       
+    # (cf. "numerical recipes" 3.3 : routine splint, and 3.4.
+    # routine hunt)
+    # given the arrays xa and ya of length n, which tabulate a
+    # function (with the xa(i)'s in order), and given the array y2a,
+    # which is the output of routine cubspl, and given a value x,
+    # this routine returns a cubic-spline interpolated value y.
+       
+    # --------------------------------------------------------------
+    # -i/o parameters
+    # -xa  : vector for independent variable x; dimension xa(n)
+    # -ya  : vector for x-dependent variable y; dimension ya(n)
+    # -y2a : 2. derivative of the interpolating function; dim. y2a(n)
+    # -n   : dimension of input vectors
+    # -x   : x value for which y is to be interpolated
+    # -y   : result of interpolation
+    # --------------------------------------------------------------
+       
+    # --------------------------------------------------------------
+        # i/o parameter type declaration
+        # integer           n,nstore
+        # double precision  x, xa(n), y, ya(n), y2a(n)
+           
+        # program variables type declaration
+        # integer           inc, jhi, jlo, jm
+        # double precision  h, a, b
+        # logical           ascnd
+       
+        # find interval xa(jlo) <= x <= xa(jlo+1) = xa(jhi)
+        # ascnd is true if ascending order of table, false otherwise
+        ascnd = xa[n] > xa[1]
+        if jlo <= 0 || jlo > n 
+        # input guess not useful. go immediately to bisection.
+            jlo = 0
+            jhi = n + 1
+        else           
+            # set the hunting increment
+            inc = 1
+            # hunt up if ascending array or down if descending.
+            if  x >=  xa[jlo] == ascnd
+                # hunt up:
+                jhi = jlo + inc
+                if jhi > n
+                    # done hunting since off end of table
+                    jhi = n + 1
+                else
+                    # nstore is a work around for old 'go to' logic, if jhi exceeds n, that is fine
+                    # but the do while loop will break so jhi equals n temporarily and nstore holds
+                    # real value until we exit loop.
+                    nstore = 1
+                    while true
+                        # not done hunting
+                        jlo = jhi
+                        # so double increment
+                        inc += inc
+                        # try again
+                        jhi = jlo + inc
+                        if jhi > n
+                            jhi = n
+                            nstore = n+1
+                        end   
+                        ((x >=  xa[jhi]) == ascnd) &&  (jhi < n) || break
+                    end
+                    if nstore == n + 1 jhi = nstore end
+                # done hunting, value bracketed.
+                end        
+            else
+                jhi = jlo
+                # hunt down:
+                jlo = jhi - inc
+                if jlo < 1
+                    jlo = 0 
+                else
+                    nstore=1
+                    while true
+                        # not done hunting,
+                        jhi = jlo
+                        # so double the increment
+                        inc = inc + inc
+                        # and try again.
+                        jlo = jhi - inc
+                        if jlo < 1 
+                            jlo = 1
+                            nstore = 0
+                        end  
+                        (((x < xa(jlo)) == ascnd) &&  (jlo  >  1)) || break
+                    end
+                    if nstore == 0 jlo = nstore end
+                end  
+                # done hunting, since off end of table.
+            end   
+        end     
+
+        while true  
+        # hunt is done, so begin final bisection phase:
+            jm = (jhi + jlo)/2
+            if x > xa[jm] == ascnd 
+               jlo = jm
+            else
+               jhi = jm
+            end  
+            (jhi - jlo !=  1) || break     
+        end
+           
+        if jlo == 0
+            jlo = 1
+            jhi = 2
+        end   
+           
+        # jlo and jhi now bracket the input value of x.
+        # cubic spline polynomial is now evaluated.
+        if jlo == n
+            jlo = n-1
+            jhi = n
+        end   
+        h = xa[jhi] - xa[jlo]
+        a = (xa[jhi] - x) / h
+        b = (x - xa[jlo]) / h
+        y = a*ya[jlo] + b*ya[jhi] + ((a^3-a)*y2a[jlo] + (b^3-b)*y2a[jhi]) * (h^2)/6.0
+        return y
+end    
 
 end
