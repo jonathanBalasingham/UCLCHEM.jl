@@ -186,6 +186,69 @@ function lbar(u,w)
     if lbar < 913.6  lbar =  913.6 end
 end
 
+function splie2(x1a,x2a,ya,m,n,y2a)
+     # given an m by n tabulated function ya, and tabulated indepen-
+     # dent variables x1a (m values) and x2a (n values), this routine
+     # constructs one-dimensional natural cubic splines of the rows
+     # of ya and returns the second-derivatives in the array y2a.
+     # (copied from numerical recipes)
+    
+     # --------------------------------------------------------------
+     # i/o parameter and program variables
+     #         double precision  x1a(m), x2a(n), ya(m,n), y2a(m,n), ytmp(nn), y2tmp(nn)
+     # --------------------------------------------------------------
+     nn = 100
+     y2tmp = zeros(nn)
+     for i in 1:m
+        for k in 1:n
+            ytmp[k] = ya[j, k]
+        end
+        spline(x2a,ytmp,n,1.0e30,1.0e30,y2tmp)
+        for k in 1:n
+            y2a[j, k] = y2tmp[k]
+        end
+     end
+end
+
+function spline(x,y,n,yp1,ypn,y2)
+    if yp1 >= 1.0e30
+     # the lower boundary condition is set either to be
+     # "natural"
+        y2[1] =  0.0
+        u[1]  =  0.0
+    else
+     # or else to have a specified first derivative.
+        y2[1] = -0.5
+        u[1]  = (3.0/(x[2]-x[1]))*((y[2]-y[1])/(x[2]-x[1])-yp1)
+    end
+   
+     # this is the decomposition loop of the tridiagonal algorithm.
+     # y2 and u are used for temporary storage of decomposed factors.
+    for  i in 2:n-1
+        sig   = (x[i]-x[i-1])/(x[i+1]-x[i-1])
+        p     = sig*y2[i-1] + 2.0
+        y2[i] = (sig-1.0)/p
+        u[i]  = (6.0*((y[i+1]-y[i])/(x[i+1]-x[i])-(y[i]-y[i-1])/(x[i]-x[i-1]))/(x[i+1]-x[i-1])-sig*u[i-1])/p
+    end
+       
+    if ypn >= 1.0e30
+     #      the upper boundary condition is set either to be
+     #      "natural"
+        qn = 0.0
+        un = 0.0
+    else
+     #      or else to have a specified first derivative.
+        qn = 0.5
+        un = (3.0/(x[n]-x[n-1])) *(ypn-(y[n]-y[n-1])/(x[n]-x[n-1]))
+    end
+       
+    y2[n] = (un-qn*u[n-1])/(qn*y2[n-1]+1.0)
+       
+     # this is the backsubstitution loop of the tridiagonal algorithm
+    for k in n-1:-1:1
+        y2[k] = y2[k]*y2[k+1]+u[k]
+    end
+end
 
 
 end
