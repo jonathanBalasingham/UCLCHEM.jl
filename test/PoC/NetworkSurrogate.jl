@@ -1,8 +1,13 @@
 using UCLCHEM, ReservoirComputing, Sundials, Surrogates
 
-rfp = "./test/input/reactions.csv"
-sfp = "./test/input/species.csv"
+rfp = "./test/input/reactions_final.csv"
+sfp = "./test/input/species_final.csv"
 icfp = "./test/input/initcond0.csv"
+
+#rfp = "./test/input/reactions.csv"
+#sfp = "./test/input/species.csv"
+#icfp = "./test/input/initcond1.csv"
+
 
 tspan = (0., 10^6 * 365. * 24. * 3600.)
 
@@ -30,7 +35,7 @@ i = 1
 parameters = x[begin]
 pa = UCLCHEM.Parameters(parameters...)
 p = UCLCHEM.formulate(sfp,rfp,icfp,pa,tspan, rate_factor = 1)
-sol = UCLCHEM.solve(p, solver=CVODE_BDF)
+sol = UCLCHEM.solve(p, solver=QNDF1)
 
 train_subset = hcat(sol.u...) |> Matrix
 esn = ESN(res_size,
@@ -46,10 +51,11 @@ esn = ESN(res_size,
 W = esn.W
 W_in = esn.W_in
 
-for parameters in x[221:end]      
+for parameters in x[1:50]   
+    println(i)
     pa = UCLCHEM.Parameters(parameters...)
     p = UCLCHEM.formulate(sfp,rfp,icfp,pa,tspan, rate_factor = 1)
-    sol = UCLCHEM.solve(p, solver=CVODE_BDF)      
+    @time sol = UCLCHEM.solve(p, solver=QNDF1);   
     train_subset = hcat(sol.u...) |> Matrix
 
     esn = ESN(W,
@@ -64,17 +70,16 @@ for parameters in x[221:end]
     flattened_W_out = reshape(W_out, :, 1)
     push!(y, flattened_W_out)
     i += 1
-    println(i)
 end
 
-radial_surrogate = RadialBasis(x[1:220], y, rates_set_lower_bound, rates_set_upper_bound)
+radial_surrogate = RadialBasis(x[1:50], y, rates_set_lower_bound, rates_set_upper_bound)
 
 test_parameters = [0.6, 0.2, 9, 0.6, 0.9, 0.45, 1.2e4]
 test_W_out = reshape(radial_surrogate(test_parameters), 23, :)
 
 pa = UCLCHEM.Parameters(parameters...)
 p = UCLCHEM.formulate(sfp,rfp,icfp,pa,tspan, rate_factor = 1)
-sol = UCLCHEM.solve(p, solver=CVODE_BDF)
+sol = UCLCHEM.solve(p, solver=QNDF1)
 train_subset = hcat(sol.u...) |> Matrix
 
 esn = ESN(W,
