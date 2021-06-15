@@ -102,3 +102,12 @@ plot!(test_output[1:20, :]',layout=(4,5), label="Interpolated", size=(1800, 1200
 
 plot!(train_subset[1:20, 2:end]', layout=(4,5), label="Ground Truth", size=(1800, 1200))
 xaxis!(:log10)
+
+using Plots
+for (i, species) in enumerate(p.species)
+    plot(sol.t ./ (3600 * 24 * 365), output[i, :], title=species, label="Predicted", legend=:outertopright)
+    plot!(sol.t ./ (3600 * 24 * 365), train_subset[i, :], title=species, label="Groud Truth", legend=:outertopright)
+    xticks!([10^0, 10,10^2,10^3,10^4,10^5,10^6])
+    xaxis!(:log10)
+    savefig("./output/$species.png")
+end

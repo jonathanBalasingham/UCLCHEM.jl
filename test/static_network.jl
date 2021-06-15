@@ -42,7 +42,7 @@ icfp = "./test/input/initcond0.csv"
 
 T=10
 zeta= 1.3e-17 
-zeta=1.0
+#zeta=1.0
 F_UV=1
 A_v=2
 omega = 0.5
@@ -51,9 +51,9 @@ dens = 1e4
 p = UCLCHEM.Parameters(zeta, omega, T, F_UV, A_v, E, dens)
 
 #tspan = (0., 10^7 * 365. * 24. * 3600.)
-tspan = (0., 10^7 * 365. * 24. * 3600. / 100000)
+tspan = (0., 10^6 * 365. * 24. * 3600.)
 
-prob = UCLCHEM.formulate(sfp,rfp,icfp,p,tspan, rate_factor = 100000)
+prob = UCLCHEM.formulate(sfp,rfp,icfp,p,tspan, rate_factor= 1)
 
 using Flux, DiffEqFlux
 interior_nodes = 10
