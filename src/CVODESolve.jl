@@ -2,14 +2,15 @@ using Sundials
 using DifferentialEquations
 using DelimitedFiles
 using ProgressMeter
+using DiffEqCallbacks
+import DifferentialEquations: solve
 
 function solve(prob::ChemicalNetworkProblem; 
-                abstol::Float64=10^-20, 
-                reltol=10^-4, 
+                abstol::Float64=10^-30, 
+                reltol=10^-10, 
                 maxiter::Int=10000, 
                 solver=CVODE_BDF,
-                time_factor=1.1, time_factor_pre_1000_years=10.)
-
+                time_factor=1.05, time_factor_pre_1000_years=10.)
     current_time = 0.0
     target_time = 1.1
     u = Float64[]
@@ -20,7 +21,7 @@ function solve(prob::ChemicalNetworkProblem;
     @async p = ProgressThresh(prob.tspan[2], 0)
 
     while current_time <= prob.tspan[2]
-        sol = DifferentialEquations.solve(current_problem, solver(), maxiter=maxiter, reltol=reltol, abstol=abstol)
+        sol = DifferentialEquations.solve(current_problem, solver(), maxiter=maxiter, reltol=reltol, abstol=abstol, cb=CallbackSet(PositiveDomain(abstol=1e-200)))
         u = vcat(u, sol.u[2:end])
         t = vcat(t, sol.t[2:end])
         current_time = target_time

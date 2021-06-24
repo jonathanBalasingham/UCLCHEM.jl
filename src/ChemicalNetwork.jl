@@ -89,4 +89,4 @@ struct ChemicalNetworkSolution
     species::Array{String,1}
 end
 
-species(network::ChemicalNetworkProblem) = network.species
+# species(network::ChemicalNetworkProblem) = network.species
