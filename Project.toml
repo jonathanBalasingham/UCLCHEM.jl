@@ -39,6 +39,7 @@ deSolveDiffEq = "0518478a-701b-4815-806c-24ad5cb92f09"
 
 [compat]
 DiffEqFlux = "1.31"
+ParameterizedFunctions = "5"
 julia = "1"
 
 [extras]
